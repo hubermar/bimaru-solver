@@ -51,30 +51,31 @@ public class Solver {
 			new FillRemainingCells(grid),
 			new FindLargestShip(grid, fleet)
 		);
-		processTasks(tasks);
+		// loop through all tasks until no more results can be found
+		boolean executeTasks = true;
+		while (executeTasks) {
+			int taskResultCount = processTasks(tasks);
+			executeTasks = taskResultCount > 0;
+		}
 		if (debug) {
 			grid.print();
 		}
 	}
 
-	private void processTasks(List<SolverTask> tasks) {
-		// loop through all tasks until no more results can be found
-		boolean executeTasks = true;
-		while (executeTasks) {
-			int taskResultCount = 0;
-			for (SolverTask task : tasks) {
-				// repeat this task until it can't find more results, then use next task
-				boolean repeat = true;
-				while (repeat) {					
-					List<Cell> affectedCells = processTask(task);
-					int affectectCellCount = affectedCells.size();
-					repeat = affectectCellCount > 0;
-					taskResultCount += affectectCellCount;
-					updateFleet(affectedCells);
-				}
+	private int processTasks(List<SolverTask> tasks) {
+		int taskResultCount = 0;
+		for (SolverTask task : tasks) {
+			// repeat this task until it can't find more results, then use next task
+			boolean repeat = true;
+			while (repeat) {					
+				List<Cell> affectedCells = processTask(task);
+				int affectectCellCount = affectedCells.size();
+				repeat = affectectCellCount > 0;
+				taskResultCount += affectectCellCount;
+				updateFleet(affectedCells);
 			}
-			executeTasks = taskResultCount > 0;
 		}
+		return taskResultCount;
 	}
 	
 	private void updateFleet(List<Cell> affectedCells) {
@@ -95,5 +96,4 @@ public class Solver {
 		}
 		return taskResults;
 	}
-
 }

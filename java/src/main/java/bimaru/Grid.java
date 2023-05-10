@@ -81,17 +81,18 @@ public class Grid {
 
 	public void print() {
 		System.out.println("---------------------------------------------");
-		for (int row = 0; row < cells.length; row++) {
-			System.out.print(rowSums[row]);
-			for (int col = 0; col < cells[row].length; col++) {
-				System.out.print("|");
-				System.out.print(cells[row][col].getType().getSymbol());
-			}
-			System.out.println("|");
-		}
-		System.out.print(" ");
+		System.out.print("  ");
 		for (int col = 0; col < colSums.length; col++) {
 			System.out.print(" " + colSums[col]);
+		}
+		System.out.println();
+		for (int row = 0; row < cells.length; row++) {
+			System.out.print(rowSums[row] + " ");
+			for (int col = 0; col < cells[row].length; col++) {
+				System.out.print(" ");
+				System.out.print(cells[row][col].getType().getSymbol());
+			}
+			System.out.println("");
 		}
 		System.out.println();
 	}
@@ -152,5 +153,16 @@ public class Grid {
 				results.add(new Cell(type, position));
 			}
 		}
+	}
+
+	public boolean allCellsHaveType() {
+		for (int row = 0; row < cells.length; row++) {
+			for (int col = 0; col < cells[row].length; col++) {
+				if (cells[row][col].getType() == CellType.UNDEF) {
+					return false;
+				}
+			}
+		}
+		return true;
 	}
 }
