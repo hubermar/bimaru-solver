@@ -8,7 +8,7 @@
 	<properties>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
-		<slf4j.version>1.7.25</slf4j.version>
+		<slf4j.version>2.0.7</slf4j.version>
 		<logback.version>1.4.7</logback.version>
 		<junit.version>[4.13.1,)</junit.version>
 	</properties>
@@ -72,12 +72,6 @@
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
-			<version>${logback.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-core</artifactId>
 			<version>${logback.version}</version>
 		</dependency>
 

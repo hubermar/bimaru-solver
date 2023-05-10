@@ -80,7 +80,6 @@ public class Grid {
 	}
 
 	public void print() {
-		System.out.println("---------------------------------------------");
 		System.out.print("  ");
 		for (int col = 0; col < colSums.length; col++) {
 			System.out.print(" " + colSums[col]);

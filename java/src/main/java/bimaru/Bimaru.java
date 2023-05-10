@@ -8,7 +8,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -30,22 +29,22 @@ public class Bimaru {
 	private Bimaru() { }
 
 	public static void main(String[] args) throws IOException {
+		
+		Option debug = new Option("d", "debug", false, "enable debug output");
 		Options options = new Options();
-
-        Option debug = new Option("d", "debug", false, "enable debug output");
-        options.addOption(debug);
-
-        HelpFormatter formatter = new HelpFormatter();
-        try {
-        	CommandLineParser parser = new DefaultParser();
+		options.addOption(debug);
+		try {
+			CommandLineParser parser = new DefaultParser();
         	CommandLine cmd = parser.parse(options, args);
-
+			boolean debugEnabled = cmd.hasOption(debug.getOpt());
+			
+			
 			List<String> configFiles = listConfigFiles();
 
 			configFiles.stream().filter(f -> f.endsWith(CONFIG_POSTFIX)).forEach(
 				f -> System.out.println(configFiles.indexOf(f) + " - " + f.replace(CONFIG_POSTFIX, ""))				
 			);
-
+			
 			int index = -1;
 			do {
 				String input = System.console().readLine("Choose configuration: ");
@@ -59,28 +58,29 @@ public class Bimaru {
 			}
 			while (index < 0 || index > configFiles.size() - 1);
 
+			System.out.println();
+			
 			Path configPath = Paths.get(CONFIG_FOLDER, configFiles.get(index));
 			InputStream configStream = Bimaru.class.getClassLoader().getResourceAsStream(configPath.toString());
-        	BimaruConfig config = readAndValidateConfig(configStream);
-        	
-        	Grid grid = createGrid(config);
-        	Fleet fleet = createFleet(config);
-
-    		Solver solver = new Solver(grid, fleet);
-    		solver.setDebug(cmd.hasOption(debug.getOpt()));
-    		solver.prepare();
-    		solver.solve();
-
-			if (!grid.allCellsHaveType()) {
+			BimaruConfig config = readAndValidateConfig(configStream);
+			
+			Grid grid = createGrid(config);
+			Fleet fleet = createFleet(config);
+			
+			Solver solver = new Solver(grid, fleet);
+			solver.setDebug(debugEnabled);
+			if (solver.solve()) {
+				System.out.println("Solver successful !!!");
+			} else {
 				System.err.println("Solver failed !!!");
 			}
-
-        } catch (ParseException e) {
-            System.out.println(e.getMessage());
-            formatter.printHelp("utility-name", options);
-            System.exit(1);
-            return;
-        }
+		} catch (ParseException e) {
+			System.out.println(e.getMessage());
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp("utility-name", options);
+			System.exit(1);
+			return;
+		}
 	}
 
 	private static List<String> listConfigFiles() throws IOException {

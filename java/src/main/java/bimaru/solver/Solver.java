@@ -35,7 +35,13 @@ public class Solver {
 		this.debug = debug;
 	}
 	
-	public void prepare() {
+	public boolean solve() {
+		doPreliminaryTasks();
+		doRepeatableTasks();
+		return grid.allCellsHaveType();
+	}
+	
+	private void doPreliminaryTasks() {
 		if (debug) {
 			grid.print();
 		}
@@ -46,36 +52,31 @@ public class Solver {
 		processTasks(tasks);
 	}
 	
-	public void solve() {
+	private void doRepeatableTasks() {
 		List<SolverTask> tasks = Arrays.asList(
 			new FillRemainingCells(grid),
 			new FindLargestShip(grid, fleet)
 		);
 		// loop through all tasks until no more results can be found
-		boolean executeTasks = true;
-		while (executeTasks) {
-			int taskResultCount = processTasks(tasks);
-			executeTasks = taskResultCount > 0;
-		}
-		if (debug) {
-			grid.print();
-		}
+		int taskResultCount = 0;
+		do {
+			taskResultCount = processTasks(tasks);
+		} while (taskResultCount > 0);
 	}
 
 	private int processTasks(List<SolverTask> tasks) {
-		int taskResultCount = 0;
+		int affectectCellSum = 0;
 		for (SolverTask task : tasks) {
-			// repeat this task until it can't find more results, then use next task
-			boolean repeat = true;
-			while (repeat) {					
+			// repeat this task until it can't find more changed cells, then use next task
+			int affectedCellCount = 0;
+			do {
 				List<Cell> affectedCells = processTask(task);
-				int affectectCellCount = affectedCells.size();
-				repeat = affectectCellCount > 0;
-				taskResultCount += affectectCellCount;
 				updateFleet(affectedCells);
-			}
+				affectedCellCount = affectedCells.size();
+				affectectCellSum += affectedCellCount;
+			} while (affectedCellCount > 0);
 		}
-		return taskResultCount;
+		return affectectCellSum;
 	}
 	
 	private void updateFleet(List<Cell> affectedCells) {

@@ -1,4 +1,6 @@
 <configuration>
+	<statusListener class="ch.qos.logback.core.status.NopStatusListener" />
+
 	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
 		<!-- encoders are assigned the type ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
 		<encoder>
@@ -7,7 +9,19 @@
 		</encoder>
 	</appender>
 
-	<root level="debug">
+   <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+      <file> bimaru.log </file>
+      <append>true</append>
+      <encoder>
+			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{5}:%line - %msg%n
+			</pattern>
+      </encoder>
+   </appender>
+   
+   	<root level="debug">
+		<!-- 
 		<appender-ref ref="STDOUT" />
+		-->
+		<appender-ref ref="FILE" />
 	</root>
 </configuration>
