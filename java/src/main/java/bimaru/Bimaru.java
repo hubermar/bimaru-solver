@@ -25,6 +25,7 @@ import bimaru.solver.Solver;
 public class Bimaru {
 
 	private static final String CONFIG_FOLDER = "config";
+	private static final String CONFIG_POSTFIX = ".json";
 	
 	private Bimaru() { }
 
@@ -34,10 +35,6 @@ public class Bimaru {
         Option debug = new Option("d", "debug", false, "enable debug output");
         options.addOption(debug);
 
-        // Option file = new Option("f", "file", true, "file with initial settings");
-        // file.setRequired(true);
-        // options.addOption(file);
-
         HelpFormatter formatter = new HelpFormatter();
         try {
         	CommandLineParser parser = new DefaultParser();
@@ -45,16 +42,20 @@ public class Bimaru {
 
 			List<String> configFiles = listConfigFiles();
 
-			configFiles.stream()/*.filter(f -> f.endsWith(".json"))*/.forEach(
-				f -> System.out.println(configFiles.indexOf(f) + " - " + f)				
+			configFiles.stream().filter(f -> f.endsWith(CONFIG_POSTFIX)).forEach(
+				f -> System.out.println(configFiles.indexOf(f) + " - " + f.replace(CONFIG_POSTFIX, ""))				
 			);
 
 			int index = -1;
-			do {	
-				System.out.print("Choose: ");
-				try (Scanner in = new Scanner(System.in)) {
-					index = in.nextInt();
-				}		
+			do {
+				String input = System.console().readLine("Choose configuration: ");
+				if (input != null) {
+					try {
+						index = Integer.valueOf(input);
+					} catch (NumberFormatException e) {
+						// ignore
+					}
+				}
 			}
 			while (index < 0 || index > configFiles.size() - 1);
 
