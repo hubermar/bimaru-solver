@@ -240,7 +240,6 @@ public class ShipFinderTest {
 	}
 
 	private void doTest(Grid grid, List<Block> expected) {
-		grid.print();
 		List<Block> actual = new ShipFinder(grid).find();
 		assertEquals("expected " + expected + " but was " + actual, expected.size(), actual.size());
 		assertTrue("expected " + expected + " but was " + actual, expected.containsAll(actual));

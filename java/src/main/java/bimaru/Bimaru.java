@@ -1,5 +1,7 @@
 package bimaru;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,93 +16,76 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 
 import bimaru.solver.Solver;
 
-public class Bimaru {
+public class Bimaru implements PropertyChangeListener {
+
+	private static final Logger LOG = LoggerFactory.getLogger(Bimaru.class);
 
 	private static final String CONFIG_FOLDER = "config";
 	private static final String CONFIG_POSTFIX = ".json";
-	
-	private Bimaru() { }
 
-	public static void main(String[] args) throws IOException {
+	private boolean debug;
+
+	private Grid grid;
+
+	private Solver solver;
+
+	private Fleet fleet;
+
+	private Bimaru(boolean debug) throws Exception {
+		this.debug = debug;
+		init();
+	}
+
+	private void init() throws IOException {		
+		Ui.banner("", "Welcome to Bimaru", "Version 0.0.1", "");
+
+		List<String> configs = enumerateConfigs();
+		String selectedConfig = Ui.selectItem("Choose configuration: ", configs, Object::toString);
+		BimaruConfig config = readConfig(selectedConfig);
+		config.validate();
+
+		grid = createGrid(config);
+		fleet = createFleet(config);
 		
-		Option debug = new Option("d", "debug", false, "enable debug output");
-		Options options = new Options();
-		options.addOption(debug);
-		try {
-			CommandLineParser parser = new DefaultParser();
-        	CommandLine cmd = parser.parse(options, args);
-			boolean debugEnabled = cmd.hasOption(debug.getOpt());
-			
-			
-			List<String> configFiles = listConfigFiles();
+		solver = new Solver(grid, fleet);
+		solver.addPropertyChangeListener(this);
+	}
 
-			configFiles.stream().filter(f -> f.endsWith(CONFIG_POSTFIX)).forEach(
-				f -> System.out.println(configFiles.indexOf(f) + " - " + f.replace(CONFIG_POSTFIX, ""))				
-			);
-			
-			int index = -1;
-			do {
-				String input = System.console().readLine("Choose configuration: ");
-				if (input != null) {
-					try {
-						index = Integer.valueOf(input);
-					} catch (NumberFormatException e) {
-						// ignore
-					}
-				}
-			}
-			while (index < 0 || index > configFiles.size() - 1);
-
-			System.out.println();
-			
-			Path configPath = Paths.get(CONFIG_FOLDER, configFiles.get(index));
-			InputStream configStream = Bimaru.class.getClassLoader().getResourceAsStream(configPath.toString());
-			BimaruConfig config = readAndValidateConfig(configStream);
-			
-			Grid grid = createGrid(config);
-			Fleet fleet = createFleet(config);
-			
-			Solver solver = new Solver(grid, fleet);
-			solver.setDebug(debugEnabled);
-			if (solver.solve()) {
-				System.out.println("Solver successful !!!");
-			} else {
-				System.err.println("Solver failed !!!");
-			}
-		} catch (ParseException e) {
-			System.out.println(e.getMessage());
-			HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp("utility-name", options);
-			System.exit(1);
-			return;
+	public void start() {
+		boolean successful = solver.solve();
+		if (successful) {
+			Ui.write("Solver successful !!!");
+		} else {
+			Ui.write("Solver failed !!!");
 		}
 	}
 
-	private static List<String> listConfigFiles() throws IOException {
+	private List<String> enumerateConfigs() throws IOException {
 		List<String> files = new ArrayList<>();
 		try (InputStream in = Bimaru.class.getClassLoader().getResourceAsStream(CONFIG_FOLDER);
 			 BufferedReader br = new BufferedReader(new InputStreamReader(in))) {
 				String resource;
 			while ((resource = br.readLine()) != null) {
-				files.add(resource);
+				files.add(resource.replace(CONFIG_POSTFIX, ""));
 			}
 		}
 		return files;
 	}
 
-	private static BimaruConfig readAndValidateConfig(InputStream is) throws IOException {
+	private BimaruConfig readConfig(String selectedConfig) throws IOException {
+		Path configPath = Paths.get(CONFIG_FOLDER, selectedConfig + CONFIG_POSTFIX);
+		InputStream configStream = Bimaru.class.getClassLoader().getResourceAsStream(configPath.toString());
+		JsonReader reader = new JsonReader(new InputStreamReader(configStream));
 		Gson gson = new Gson();
-		JsonReader reader = new JsonReader(new InputStreamReader(is));
-		BimaruConfig config = gson.fromJson(reader, BimaruConfig.class);
-		config.validate();
-		return config;
+		return gson.fromJson(reader, BimaruConfig.class);
 	}
 	
 	private static Fleet createFleet(BimaruConfig config) {
@@ -115,5 +100,38 @@ public class Bimaru {
 			}
 		}
 		return grid;
+	}
+
+	@Override
+	public void propertyChange(PropertyChangeEvent evt) {
+		switch (evt.getPropertyName()) {
+			case Solver.PROP_TASK_COMPLETED:
+				if (debug) {
+					Ui.writeGrid(grid);
+				}
+				break;
+			default:
+				LOG.warn("Unhandled property " + evt.getPropertyName());
+		}
 	}	
+
+	public static void main(String[] args) throws IOException {		
+		Option debug = new Option("d", "debug", false, "enable debug output");
+		Options options = new Options();
+		options.addOption(debug);
+
+		try {
+			CommandLineParser parser = new DefaultParser();
+        	CommandLine cmd = parser.parse(options, args);
+			boolean debugEnabled = cmd.hasOption(debug.getOpt());
+			
+			Bimaru bimaru = new Bimaru(debugEnabled);
+			bimaru.start();
+		} catch (Exception e) {
+			LOG.error("Failed", e);
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp("utility-name", options);
+			System.exit(1);
+		}
+	}
 }

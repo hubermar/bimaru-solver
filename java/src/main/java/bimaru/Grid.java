@@ -1,5 +1,7 @@
 package bimaru;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,6 +15,10 @@ public class Grid {
 
 	private static Logger LOG = LoggerFactory.getLogger(Grid.class);
 	
+	private final PropertyChangeSupport support = new PropertyChangeSupport(this);
+
+	public static final String PROP_CELL_CHANGED = "cellChanged";
+
 	/**
 	 * Cell[row][column]
 	 */
@@ -29,6 +35,22 @@ public class Grid {
 				cells[row][col] = new Cell(CellType.UNDEF, new Position(row, col));
 			}
 		}
+	}
+
+	public int getColumnCount() {
+		return colSums.length;
+	}
+
+	public int getRowCount() {
+		return rowSums.length;
+	}
+
+	public int getColumnSum(int col) {
+		return colSums[col];
+	}
+
+	public int getRowSum(int row) {
+		return rowSums[row];
 	}
 
 	public void forEach(CellAction action) {
@@ -78,41 +100,6 @@ public class Grid {
 			}
 		}
 	}
-
-	public void print() {
-		System.out.print("  ");
-		for (int col = 0; col < colSums.length; col++) {
-			System.out.print(" " + colSums[col]);
-		}
-		System.out.println();
-		for (int row = 0; row < cells.length; row++) {
-			System.out.print(rowSums[row] + " ");
-			for (int col = 0; col < cells[row].length; col++) {
-				System.out.print(" ");
-				System.out.print(cells[row][col].getType().getSymbol());
-			}
-			System.out.println("");
-		}
-		System.out.println();
-	}
-
-	public void printRegion(Position pos) {
-//		System.out.println("region around " + pos);
-//		System.out.println("---");
-//		System.out.print(get(pos.create(-1, -1)).getSymbol());
-//		System.out.print(get(pos.create(-1,  0)).getSymbol());
-//		System.out.print(get(pos.create(-1,  1)).getSymbol());
-//		System.out.println();
-//		System.out.print(get(pos.create( 0, -1)).getSymbol());
-//		System.out.print(get(pos.create( 0,  0)).getSymbol());
-//		System.out.print(get(pos.create( 0,  1)).getSymbol());
-//		System.out.println();
-//		System.out.print(get(pos.create( 1, -1)).getSymbol());
-//		System.out.print(get(pos.create( 1,  0)).getSymbol());
-//		System.out.print(get(pos.create( 1,  1)).getSymbol());
-//		System.out.println();
-//		System.out.println("---");
-	}
 	
 	public CellType get(Position pos) {
 		return get(pos.getRow(), pos.getColumn());
@@ -127,7 +114,9 @@ public class Grid {
 	
 	public void apply(Cell cell) {
 		if (cell != null && checkBounds(cell.getRow(), cell.getColumn())) {
+			Cell oldCell = cells[cell.getRow()][cell.getColumn()];
 			cells[cell.getRow()][cell.getColumn()] = cell;
+			support.firePropertyChange(PROP_CELL_CHANGED, oldCell, cell);
 		}
 	}
 
@@ -164,4 +153,13 @@ public class Grid {
 		}
 		return true;
 	}
+
+	public void addPropertyChangeListener(PropertyChangeListener l) {
+		support.addPropertyChangeListener(l);
+	}
+
+	public void removePropertyChangeListener(PropertyChangeListener l) {
+		support.removePropertyChangeListener(l);
+	}
+
 }

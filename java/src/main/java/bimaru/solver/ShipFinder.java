@@ -114,7 +114,6 @@ public class ShipFinder {
 	}
 	
 	private boolean analyzeLineEnd(Position pos, Orientation or, int rowOffset, int columnOffset) {
-		grid.printRegion(pos);
 		if (checkCellAt(pos, CellType.WATER)) {
 			switch (or) {
 			case HORIZONTAL:

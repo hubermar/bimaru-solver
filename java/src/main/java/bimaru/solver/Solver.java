@@ -1,5 +1,7 @@
 package bimaru.solver;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -19,20 +21,16 @@ import bimaru.solver.tasks.FindLargestShip;
 public class Solver {
 
 	private static Logger LOG = LoggerFactory.getLogger(Solver.class);
+
+	public static final String PROP_TASK_COMPLETED = "taskCompleted";
 	
+	private final PropertyChangeSupport support = new PropertyChangeSupport(this);
 	private final Grid grid;
 	private final Fleet fleet;
-
-	private boolean debug;
-
 
 	public Solver(Grid grid, Fleet fleet) {
 		this.grid = grid;
 		this.fleet = fleet;
-	}
-
-	public void setDebug(boolean debug) {
-		this.debug = debug;
 	}
 	
 	public boolean solve() {
@@ -42,9 +40,6 @@ public class Solver {
 	}
 	
 	private void doPreliminaryTasks() {
-		if (debug) {
-			grid.print();
-		}
 		List<SolverTask> tasks = Arrays.asList(
 			new ConvertConfigCellTypes(grid),
 			new FillZeroSum(grid)
@@ -92,9 +87,15 @@ public class Solver {
 		task.process(taskResults);
 		LOG.debug("task {} found {} results.", task.getClass().getSimpleName(), taskResults.size());
 		taskResults.stream().forEach(grid::apply);
-		if (debug && !taskResults.isEmpty()) {
-			grid.print();
-		}
+		support.firePropertyChange(PROP_TASK_COMPLETED, null, task);
 		return taskResults;
+	}
+	
+	public void addPropertyChangeListener(PropertyChangeListener l) {
+		support.addPropertyChangeListener(l);
+	}
+
+	public void removePropertyChangeListener(PropertyChangeListener l) {
+		support.removePropertyChangeListener(l);
 	}
 }
