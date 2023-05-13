@@ -59,13 +59,8 @@ public class Bimaru implements PropertyChangeListener {
 		solver.addPropertyChangeListener(this);
 	}
 
-	public void start() {
-		boolean successful = solver.solve();
-		if (successful) {
-			Ui.write("Solver successful !!!");
-		} else {
-			Ui.write("Solver failed !!!");
-		}
+	public boolean solve() {
+		return solver.solve();
 	}
 
 	private List<String> enumerateConfigs() throws IOException {
@@ -126,7 +121,12 @@ public class Bimaru implements PropertyChangeListener {
 			boolean debugEnabled = cmd.hasOption(debug.getOpt());
 			
 			Bimaru bimaru = new Bimaru(debugEnabled);
-			bimaru.start();
+			boolean successful = bimaru.solve();
+			if (successful) {
+				Ui.banner("Solver successful !!!");
+			} else {
+				Ui.banner("Solver failed !!!");
+			}
 		} catch (Exception e) {
 			LOG.error("Failed", e);
 			HelpFormatter formatter = new HelpFormatter();
