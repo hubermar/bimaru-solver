@@ -9,13 +9,8 @@ import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +26,11 @@ public class Bimaru implements PropertyChangeListener {
 	private static final String CONFIG_FOLDER = "config";
 	private static final String CONFIG_POSTFIX = ".json";
 
+	private static final String MENU_PLAY = "Play Bimaru";
+	private static final String MENU_DEBUG = "Toggle debug output";
+	private static final String MENU_QUIT = "Quit";
+	private static final List<String> MENUS = Arrays.asList(MENU_PLAY, MENU_DEBUG, MENU_QUIT);
+
 	private boolean debug;
 
 	private Grid grid;
@@ -45,8 +45,6 @@ public class Bimaru implements PropertyChangeListener {
 	}
 
 	private void init() throws IOException {		
-		Ui.banner("", "Welcome to Bimaru", "Version 0.0.1", "");
-
 		List<String> configs = enumerateConfigs();
 		String selectedConfig = Ui.selectItem("Choose configuration: ", configs, Object::toString);
 		BimaruConfig config = readConfig(selectedConfig);
@@ -110,28 +108,36 @@ public class Bimaru implements PropertyChangeListener {
 		}
 	}	
 
-	public static void main(String[] args) throws IOException {		
-		Option debug = new Option("d", "debug", false, "enable debug output");
-		Options options = new Options();
-		options.addOption(debug);
-
-		try {
-			CommandLineParser parser = new DefaultParser();
-        	CommandLine cmd = parser.parse(options, args);
-			boolean debugEnabled = cmd.hasOption(debug.getOpt());
-			
-			Bimaru bimaru = new Bimaru(debugEnabled);
-			boolean successful = bimaru.solve();
-			if (successful) {
-				Ui.banner("Solver successful !!!");
-			} else {
-				Ui.banner("Solver failed !!!");
+	public static void main(String[] args) throws Exception {
+		Ui.banner("", "Welcome to Bimaru", "Version 0.0.1", "");
+		boolean running = true;
+		boolean debug = false;
+		while (running) {
+			Ui.write("Debug is " + (debug ? "on" : "off"));
+			String menu = Ui.selectItem("Choose: ", MENUS, Object::toString);
+			switch (menu) {
+			case MENU_PLAY:
+				play(debug);
+				break;
+			case MENU_DEBUG:
+				debug = !debug;
+				break;
+			case MENU_QUIT:
+				running = false;
+				break;
+			default:
 			}
-		} catch (Exception e) {
-			LOG.error("Failed", e);
-			HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp("utility-name", options);
-			System.exit(1);
+		}
+		Ui.banner("Bye");
+	}
+
+	private static void play(boolean debug) throws Exception {
+		Bimaru bimaru = new Bimaru(debug);
+		boolean successful = bimaru.solve();
+		if (successful) {
+			Ui.banner("Solver successful !!!");
+		} else {
+			Ui.banner("Solver failed !!!");
 		}
 	}
 }

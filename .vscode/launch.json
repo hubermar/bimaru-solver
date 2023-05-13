@@ -16,7 +16,6 @@
             "request": "launch",
             "mainClass": "bimaru.Bimaru",
             "projectName": "bimaru.solver",
-            "args": ["-d"],
         }
     ]
 }
